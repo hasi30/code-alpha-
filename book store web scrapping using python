@@ -1,0 +1,59 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+# Target URL
+base_url = "http://books.toscrape.com/catalogue/page-{}.html"
+
+# Lists to store scraped data
+titles = []
+prices = []
+availabilities = []
+ratings = []
+
+# Dictionary to convert class names to rating values
+rating_map = {
+    'One': 1,
+    'Two': 2,
+    'Three': 3,
+    'Four': 4,
+    'Five': 5
+}
+
+# Scraping first 5 pages
+for page in range(1, 6):
+    response = requests.get(base_url.format(page))
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    books = soup.find_all('article', class_='product_pod')
+
+    for book in books:
+        title = book.h3.a['title']
+        price = book.find('p', class_='price_color').text.strip()
+        availability = book.find('p', class_='instock availability').text.strip()
+
+        # Find the rating class and convert it to a number
+        rating_class = book.find('p', class_='star-rating')['class'][1]
+        rating = rating_map.get(rating_class, 0)  # default to 0 if not found
+
+        # Append data
+        titles.append(title)
+        prices.append(price)
+        availabilities.append(availability)
+        ratings.append(rating)
+
+# Creating a DataFrame
+df = pd.DataFrame({
+    'Title': titles,
+    'Price': prices,
+    'Availability': availabilities,
+    'Rating': ratings
+})
+
+# Save to CSV
+df.to_csv('books_data_with_ratings.csv', index=False)
+print("Scraping complete. Data saved to 'books_data_with_ratings.csv'.")
+pd = pd.read_csv('books_data_with_ratings.csv')
+print(df.head())
+print ("sucsessfully done")
+df.shape
